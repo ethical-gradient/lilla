@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lilla · Examples</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      .container {
+        max-width: 1000px;
+        padding-top: 60px;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .logo {
+        color: var(--brand);
+        width: 200px;
+      }
+
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 1.25rem;
+        margin-top: 10px;
+        font-weight: 300;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        transition:
+          border-color 0.2s,
+          background-color 0.2s;
+      }
+
+      .card:hover {
+        background-color: color-mix(in srgb, var(--bg-card), white 2%);
+        border-color: var(--brand);
+      }
+
+      .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: var(--text-main);
+      }
+
+      .card-desc {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin: 0;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <svg
+          class="logo"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 907 380"
+          fill="currentColor"
+        >
+          <path
+            fill="#d580d7"
+            d="M770.639 379.403v-81h55v-55c0-30.376-24.625-55-55-55-30.376 0-55 24.624-55 55 0 30.375 24.624 55 55 55zc-75.111 0-136-60.89-136-136 0-75.111 60.889-136 136-136s136 60.889 136 136v116c0 11.045-8.955 20-20 20z"
+          />
+          <rect width="103.843" height="379.403" rx="50" />
+          <rect width="103.843" height="234" x="164.098" y="146" rx="50" />
+          <rect
+            fill="#d580d7"
+            width="103.843"
+            height="103"
+            x="164.098"
+            rx="50"
+          />
+          <rect width="103.843" height="379.403" x="328.197" rx="50" />
+          <rect width="103.843" height="379.403" x="492.293" rx="50" />
+        </svg>
+        <p class="subtitle">Interactive Examples</p>
+      </header>
+
+      <div class="grid">
+        <a href="counter.html" class="card">
+          <h2 class="card-title">Counter</h2>
+          <p class="card-desc">Basic state and event handling.</p>
+        </a>
+
+        <a href="todo.html" class="card">
+          <h2 class="card-title">Todo App</h2>
+          <p class="card-desc">
+            List rendering, form inputs, and store basics.
+          </p>
+        </a>
+
+        <a href="modal.html" class="card">
+          <h2 class="card-title">Modal & Slots</h2>
+          <p class="card-desc">
+            Shadow DOM, named slots, and component encapsulation.
+          </p>
+        </a>
+
+        <a href="tree.html" class="card">
+          <h2 class="card-title">Tree View</h2>
+          <p class="card-desc">
+            Recursive component rendering and event bubbling.
+          </p>
+        </a>
+
+        <a href="charts.html" class="card">
+          <h2 class="card-title">SVG Charts</h2>
+          <p class="card-desc">
+            Dynamic SVG generation and data visualization.
+          </p>
+        </a>
+
+        <a href="hacker-news.html" class="card">
+          <h2 class="card-title">Hacker News</h2>
+          <p class="card-desc">
+            Async data fetching, APIs, and skeleton loaders.
+          </p>
+        </a>
+
+        <a href="kanban.html" class="card">
+          <h2 class="card-title">Kanban Board</h2>
+          <p class="card-desc">
+            Drag & Drop, multiple stores, and complex state management.
+          </p>
+        </a>
+
+        <a href="memo.html" class="card">
+          <h2 class="card-title">Memoization</h2>
+          <p class="card-desc">
+            Render optimization using the memoization utility.
+          </p>
+        </a>
+
+        <a href="bubbles.html" class="card">
+          <h2 class="card-title">Bubbles Animation</h2>
+          <p class="card-desc">High-performance manual update strategy.</p>
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

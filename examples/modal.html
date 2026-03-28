@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lilla · Modal & Slots</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      /* Light DOM styles for the demo app */
+      .profile {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .avatar {
+        width: 48px;
+        height: 48px;
+        background: color-mix(in srgb, var(--brand), transparent 85%);
+        border: 1px solid var(--brand);
+        border-radius: 50%;
+      }
+
+      .user-info strong {
+        color: var(--text-main);
+        font-weight: 600;
+      }
+
+      .user-info span {
+        color: var(--text-muted);
+        font-size: 0.9em;
+      }
+
+      .actions {
+        text-align: center;
+        margin-top: 32px;
+      }
+
+      code {
+        background: var(--bg-base);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: var(--brand);
+        font-size: 0.9em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>Modal & Slots</h1>
+      </header>
+
+      <div class="box">
+        <app-demo></app-demo>
+      </div>
+    </div>
+
+    <script type="module">
+      import { Lilla } from "./assets/setup.js";
+
+      /**
+       * Card Component.
+       * Demonstrates: Shadow DOM (required for slots), Named slots, Default slots.
+       */
+      Lilla.define("ui-card", {
+        shadow: true,
+
+        template: (_, html) => html`
+          <div class="card">
+            <header>
+              <slot name="header">Default Header</slot>
+            </header>
+            <main>
+              <slot></slot>
+            </main>
+            <footer>
+              <slot name="footer"></slot>
+            </footer>
+          </div>
+        `,
+
+        styles: `
+        :host {
+          display: block;
+          margin: 0 auto;
+        }
+        .card {
+          /* Using base background to contrast with the .box */
+          background: var(--bg-base);
+          border-radius: var(--radius);
+          overflow: hidden;
+          border: 1px solid var(--border);
+        }
+        header {
+          background: rgba(0, 0, 0, 0.2);
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--border);
+          font-weight: 600;
+        }
+        main {
+          padding: 20px;
+          color: var(--text-main);
+        }
+        footer {
+          padding: 12px 20px;
+          background: rgba(0, 0, 0, 0.2);
+          border-top: 1px solid var(--border);
+          font-size: 0.9em;
+          color: var(--text-muted);
+        }
+      `,
+      });
+
+      /**
+       * Modal Component.
+       * Demonstrates: Props, Event emitting, CSS transitions.
+       */
+      Lilla.define("ui-modal", {
+        shadow: true,
+        props: {
+          open: false,
+          title: "Message",
+        },
+
+        template({ props }, html) {
+          return html`
+            <div class="backdrop ${props.open ? "open" : ""}" on:click="close">
+              <div class="modal" on:click="stop">
+                <div class="header">
+                  <span>${props.title}</span>
+                  <button class="close-btn" on:click="close">&times;</button>
+                </div>
+                <div class="body">
+                  <slot></slot>
+                </div>
+              </div>
+            </div>
+          `;
+        },
+
+        close() {
+          this.emit("close");
+        },
+
+        stop(e) {
+          e.stopPropagation();
+        },
+
+        styles: `
+        .backdrop {
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex; align-items: center; justify-content: center;
+          opacity: 0; pointer-events: none; transition: opacity 0.2s;
+          z-index: 1000;
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+        }
+        .backdrop.open {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .modal {
+          background: var(--bg-card);
+          width: 440px;
+          max-width: 90%;
+          border-radius: var(--radius-lg);
+          border: 1px solid var(--border);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          transform: scale(0.95);
+          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          color: var(--text-main);
+        }
+        .backdrop.open .modal {
+          transform: scale(1);
+        }
+
+        .header {
+          padding: 16px 24px;
+          border-bottom: 1px solid var(--border);
+          display: flex; justify-content: space-between; align-items: center;
+          font-weight: 600;
+          font-size: 1.1em;
+        }
+        .body {
+          padding: 24px;
+          line-height: 1.6;
+        }
+
+        .close-btn {
+          background: transparent;
+          border: none;
+          font-size: 28px;
+          color: var(--text-muted);
+          cursor: pointer;
+          padding: 0;
+          line-height: 1;
+          height: auto;
+          transition: color 0.2s;
+        }
+        .close-btn:hover {
+          color: var(--text-main);
+          background: transparent;
+        }
+      `,
+      });
+
+      /**
+       * Main App Component.
+       */
+      Lilla.define("app-demo", {
+        shadow: false, // Expose to global styles to use the global .primary button
+
+        state: {
+          showModal: false,
+        },
+
+        template({ state }, html) {
+          return html`
+            <ui-card>
+              <span slot="header">User Profile</span>
+
+              <div class="profile">
+                <div class="avatar"></div>
+                <div class="user-info">
+                  <strong>John Doe</strong><br />
+                  <span>Software Engineer</span>
+                </div>
+              </div>
+
+              <div slot="footer">Active 2 minutes ago</div>
+            </ui-card>
+
+            <div class="actions">
+              <button class="primary" on:click="open">
+                Open Terms of Service
+              </button>
+            </div>
+
+            <ui-modal
+              open="${state.showModal}"
+              title="Terms of Service"
+              on:close="close"
+            >
+              <p style="margin-top: 0;">
+                This content is injected via <code>&lt;slot&gt;</code>.
+              </p>
+              <p style="color: var(--text-muted); font-size: 0.95em;">
+                Lilla supports native Shadow DOM projection. The styles from the
+                parent component are isolated unless explicitly passed.
+              </p>
+
+              <div
+                style="display: flex; justify-content: flex-end; margin-top: 32px;"
+              >
+                <button class="primary" on:click="close">
+                  Accept & Continue
+                </button>
+              </div>
+            </ui-modal>
+          `;
+        },
+
+        open() {
+          this.state.showModal = true;
+        },
+        close() {
+          this.state.showModal = false;
+        },
+      });
+    </script>
+  </body>
+</html>

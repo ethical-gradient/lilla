@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Lilla · SVG Charts</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      .container {
+        max-width: 1000px;
+      }
+
+      .controls {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .chart-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .chart-card h3 {
+        color: var(--text-muted);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 0;
+        margin-bottom: 24px;
+        align-self: flex-start;
+        width: 100%;
+      }
+
+      /* Smooth SVG Animations */
+      path,
+      rect,
+      circle,
+      polyline {
+        transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>SVG Charts</h1>
+      </header>
+
+      <svg-dashboard></svg-dashboard>
+    </div>
+
+    <script type="module">
+      import { Lilla } from "./assets/setup.js";
+
+      // ----------------------------------------------------------------
+      // Area Chart (Sparkline)
+      // ----------------------------------------------------------------
+      Lilla.define("chart-area", {
+        shadow: false,
+        props: { data: [], color: "#10b981" },
+
+        template: ({ props }, html) => {
+          const w = 300,
+            h = 100;
+          const max = Math.max(...props.data, 1);
+
+          const points = props.data
+            .map((v, i) => {
+              const x = i * (w / (props.data.length - 1));
+              const y = h - (v / max) * h;
+              return `${x},${y}`;
+            })
+            .join(" L");
+
+          const d = `M0,${h} L${points} L${w},${h} Z`;
+          const line = points.replaceAll("L", ",");
+
+          return html`
+            <svg viewBox="0 0 ${w} ${h}" width="100%" overflow="visible">
+              <defs>
+                <linearGradient
+                  id="g-${props.color}"
+                  x1="0"
+                  x2="0"
+                  y1="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stop-color="${props.color}"
+                    stop-opacity="0.4"
+                  />
+                  <stop
+                    offset="100%"
+                    stop-color="${props.color}"
+                    stop-opacity="0"
+                  />
+                </linearGradient>
+              </defs>
+              <path d="${d}" fill="url(#g-${props.color})" stroke="none" />
+              <polyline
+                points="${line}"
+                fill="none"
+                stroke="${props.color}"
+                stroke-width="2"
+              />
+            </svg>
+          `;
+        },
+      });
+
+      // ----------------------------------------------------------------
+      // Bar Chart
+      // ----------------------------------------------------------------
+      Lilla.define("chart-bar", {
+        shadow: false,
+        props: { data: [] },
+
+        template: ({ props }, html) => {
+          const w = 300,
+                h = 150;
+          const max = Math.max(...props.data, 1);
+          const barW = w / props.data.length - 8;
+
+          return html`
+            <svg viewBox="0 0 ${w} ${h}" width="100%">
+              ${props.data.map((val, i) => {
+                const bh = (val / max) * h;
+                return html`
+                  <rect
+                    x="${i * (w / props.data.length)}"
+                    y="${h - bh}"
+                    width="${barW}"
+                    height="${bh}"
+                    rx="4"
+                    fill="var(--brand)"
+                  />
+                `;
+              })}
+            </svg>
+          `;
+        },
+      });
+
+      // ----------------------------------------------------------------
+      // Donut Chart
+      // ----------------------------------------------------------------
+      Lilla.define("chart-donut", {
+        shadow: false,
+        props: { items: [] },
+
+        template: ({ props }, html) => {
+          const size = 100;
+          const center = 50;
+          const radius = 40;
+          const stroke = 12;
+          const circumference = 2 * Math.PI * radius;
+
+          const total = props.items.reduce((acc, i) => acc + i.value, 0);
+          let angleAccumulator = -90;
+
+          return html`
+            <svg viewBox="0 0 ${size} ${size}" width="200">
+              <circle
+                cx="${center}"
+                cy="${center}"
+                r="${radius}"
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.05)"
+                stroke-width="${stroke}"
+              />
+
+              ${props.items.map((item) => {
+                const pct = item.value / total;
+                const arcLength = pct * circumference;
+                const rotation = angleAccumulator;
+
+                angleAccumulator += pct * 360;
+
+                return html`
+                  <circle
+                    cx="${center}"
+                    cy="${center}"
+                    r="${radius}"
+                    fill="none"
+                    stroke="${item.color}"
+                    stroke-width="${stroke}"
+                    stroke-dasharray="${arcLength} ${circumference}"
+                    transform="rotate(${rotation} ${center} ${center})"
+                  />
+                `;
+              })}
+
+              <text
+                x="50%"
+                y="50%"
+                dy="0.35em"
+                text-anchor="middle"
+                fill="var(--text-main)"
+                font-weight="600"
+                font-size="20"
+              >
+                ${total}
+              </text>
+            </svg>
+          `;
+        },
+      });
+
+      // ----------------------------------------------------------------
+      // Main Dashboard
+      // ----------------------------------------------------------------
+      Lilla.define("svg-dashboard", {
+        shadow: false,
+        state: () => ({
+          traffic: [30, 50, 40, 70, 40, 80],
+          sales: [150, 300, 200, 400],
+          distribution: [
+            { value: 40, color: "#ef4444" },
+            { value: 20, color: "#f59e0b" },
+            { value: 15, color: "#10b981" },
+            { value: 25, color: "var(--brand)" },
+          ],
+        }),
+
+        template: ({ state }, html) => html`
+          <div>
+            <div class="controls">
+              <button on:click="randomize">Update Realtime Data</button>
+            </div>
+
+            <div class="grid">
+              <div class="chart-card">
+                <h3>Area Sparkline</h3>
+                <chart-area data="${state.traffic}"></chart-area>
+              </div>
+              <div class="chart-card">
+                <h3>Bar Chart</h3>
+                <chart-bar data="${state.sales}"></chart-bar>
+              </div>
+              <div class="chart-card">
+                <h3>Donut Distribution</h3>
+                <chart-donut items="${state.distribution}"></chart-donut>
+              </div>
+            </div>
+          </div>
+        `,
+
+        randomize() {
+          const r = (min, max) => Math.floor(Math.random() * (max - min) + min);
+
+          this.state.traffic = Array.from({ length: 6 }, () => r(20, 100));
+          this.state.sales = Array.from({ length: 4 }, () => r(100, 500));
+          this.state.distribution = this.state.distribution.map((i) => ({
+            ...i,
+            value: r(10, 60),
+          }));
+        },
+      });
+    </script>
+  </body>
+</html>

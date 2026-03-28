@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Lilla · Hacker News</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      .container {
+        max-width: 1000px;
+      }
+
+      .box {
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 60vh;
+      }
+
+      .app-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: var(--bg-btn);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .app-header h2 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #ffffff;
+        flex: 1;
+        text-align: left;
+      }
+
+      .app-header .nav-back {
+        margin: 0;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        color: #ffffff;
+      }
+
+      .app-header .nav-back:hover {
+        opacity: 1;
+      }
+
+      .feed {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      hn-skeleton {
+        display: contents;
+      }
+
+      .news-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        transition: background 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .news-item:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .news-item:last-child {
+        border-bottom: none;
+      }
+
+      .title {
+        color: var(--text-main);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 1.05em;
+        line-height: 1.4;
+        transition: color 0.2s;
+      }
+
+      .title:hover {
+        color: var(--brand);
+      }
+
+      .meta {
+        color: var(--text-muted);
+        font-size: 0.85em;
+      }
+
+      .pager {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid var(--border);
+      }
+
+      .page-info {
+        color: var(--text-muted);
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      .skeleton-item {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      .skel-title {
+        height: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        width: 85%;
+        margin-bottom: 6px;
+      }
+
+      .skel-title.short {
+        width: 60%;
+      }
+
+      .skel-meta {
+        height: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        width: 40%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>Hacker News</h1>
+      </header>
+
+      <hn-feed></hn-feed>
+    </div>
+
+    <script type="module">
+      import { Lilla } from "./assets/setup.js";
+
+      // ----------------------------------------------------------------
+      // Skeleton Component
+      // ----------------------------------------------------------------
+      Lilla.define("hn-skeleton", {
+        shadow: false,
+        props: { count: 10 },
+
+        template({ props }, html) {
+          return html`
+            ${Array.from({ length: props.count }).map(
+              (_, i) => html`
+                <div class="news-item skeleton-item">
+                  <div class="skel-title ${i % 3 === 0 ? "short" : ""}"></div>
+                  <div class="skel-meta"></div>
+                </div>
+              `,
+            )}
+          `;
+        },
+      });
+
+      // ----------------------------------------------------------------
+      // Main Feed Component
+      // ----------------------------------------------------------------
+      Lilla.define("hn-feed", {
+        shadow: false,
+
+        state: {
+          page: 1,
+          items: [],
+          loading: true,
+          error: null,
+        },
+
+        async fetchNews() {
+          this.state.loading = true;
+          this.state.error = null;
+
+          //        await new Promise(r => setTimeout(r, 200));
+
+          try {
+            const res = await fetch(
+              `https://api.hnpwa.com/v0/news/${this.state.page}.json`,
+            );
+            if (!res.ok)
+              throw new Error("Failed to load data from Hacker News");
+            const data = await res.json();
+            this.state.items = data;
+          } catch (e) {
+            this.state.error = e.message;
+          } finally {
+            this.state.loading = false;
+          }
+        },
+
+        onMount() {
+          this.fetchNews();
+        },
+
+        nextPage() {
+          this.state.page++;
+          this.fetchNews();
+        },
+
+        prevPage() {
+          if (this.state.page > 1) {
+            this.state.page--;
+            this.fetchNews();
+          }
+        },
+
+        template({ state }, html) {
+          return html`
+            <div class="box">
+              <div class="feed">
+                ${state.error
+                  ? html`<div
+                      style="padding: 20px; color: #ef4444; text-align: center;"
+                    >
+                      ${state.error}
+                    </div>`
+                  : ""}
+                ${state.loading
+                  ? html`<hn-skeleton count="10"></hn-skeleton>`
+                  : state.items.map(
+                      (item) => html`
+                        <div class="news-item" key="${item.id}">
+                          <a href="${item.url}" target="_blank" class="title"
+                            >${item.title}</a
+                          >
+                          <div class="meta">
+                            ${item.points} points by ${item.user} &bull;
+                            ${item.time_ago} &bull; ${item.comments_count}
+                            comments
+                          </div>
+                        </div>
+                      `,
+                    )}
+              </div>
+
+              <div class="pager">
+                <button
+                  on:click="prevPage"
+                  ${state.page === 1 || state.loading ? "disabled" : ""}
+                >
+                  &larr; Prev
+                </button>
+                <span class="page-info">Page ${state.page}</span>
+                <button on:click="nextPage" ${state.loading ? "disabled" : ""}>
+                  Next &rarr;
+                </button>
+              </div>
+            </div>
+          `;
+        },
+      });
+    </script>
+  </body>
+</html>

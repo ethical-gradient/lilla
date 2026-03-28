@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Lilla · Tree View</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      .box {
+        padding: 0;
+        overflow: hidden;
+        max-width: 420px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>File Tree</h1>
+      </header>
+
+      <div class="box">
+        <file-explorer></file-explorer>
+      </div>
+    </div>
+
+    <script type="module">
+      import { Lilla } from "./assets/setup.js";
+
+      // Recursive Node Component
+      Lilla.define("file-node", {
+        shadow: false, // Renders content directly into parent's Shadow DOM
+        props: {
+          item: Object,
+          depth: Number,
+        },
+
+        state() {
+          return { isOpen: this.props.item?.open || false };
+        },
+
+        toggle(e) {
+          e.stopPropagation();
+          const { item } = this.props;
+
+          if (item.type === "folder") {
+            this.state.isOpen = !this.state.isOpen;
+          } else {
+            // Bubble custom event up to the root explorer
+            this.emit("file-select", item, { bubbles: true, composed: true });
+          }
+        },
+
+        template({ props, state }, html) {
+          const { item, depth } = props;
+          const isFolder = item.type === "folder";
+
+          // Read selected item from the nearest file-explorer
+          const explorer = this.closest("file-explorer");
+          const isSelected = explorer?.state.selected === item;
+
+          // Indentation based on recursion depth
+          const padding = (depth || 0) * 20 + 16;
+
+          return html`
+            <div class="node">
+              <div
+                class="label ${isSelected ? "active" : ""}"
+                style="padding-left: ${padding}px"
+                on:click="toggle"
+              >
+                <span class="icon">
+                  ${isFolder ? (state.isOpen ? "📂" : "📁") : "📄"}
+                </span>
+                <span class="text">${item.name}</span>
+              </div>
+
+              ${isFolder && state.isOpen && item.children
+                ? html` <div class="children">
+                    ${item.children.map(
+                      (child) => html`
+                        <file-node item="${child}" depth="${(depth || 0) + 1}">
+                        </file-node>
+                      `,
+                    )}
+                  </div>`
+                : ""}
+            </div>
+          `;
+        },
+      });
+
+      // Root Explorer Component
+      Lilla.define("file-explorer", {
+        shadow: true,
+
+        state: () => ({
+          selected: null,
+          root: {
+            name: "lilla-framework",
+            type: "folder",
+            open: true,
+            children: [
+              {
+                name: "src",
+                type: "folder",
+                open: true,
+                children: [
+                  { name: "core.js", type: "file" },
+                  { name: "store.js", type: "file" },
+                  { name: "html.js", type: "file" },
+                ],
+              },
+              {
+                name: "examples",
+                type: "folder",
+                open: false,
+                children: [
+                  { name: "todo.html", type: "file" },
+                  { name: "tree.html", type: "file" },
+                ],
+              },
+              { name: "package.json", type: "file" },
+              { name: "README.md", type: "file" },
+            ],
+          },
+        }),
+
+        onMount() {
+          // Select first file by reference
+          this.state.selected = this.state.root.children[0].children[0];
+        },
+
+        onSelect(e) {
+          // Store direct object reference instead of string name
+          this.state.selected = e.detail;
+        },
+
+        template({ state }, html) {
+          return html`
+            <div class="tree" on:file-select="onSelect">
+              <file-node item="${state.root}" depth="0"> </file-node>
+            </div>
+            <div class="footer">
+              Selected:
+              <span class="highlight">${state.selected?.name || "none"}</span>
+            </div>
+          `;
+        },
+
+        styles: `
+              :host {
+                  display: block;
+                  color: var(--text-main);
+                  font-size: 15px;
+                  -webkit-tap-highlight-color: transparent;
+              }
+
+              .tree {
+                  user-select: none;
+                  padding: 12px 0;
+              }
+
+              .label {
+                  padding: 6px 16px;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  cursor: pointer;
+                  transition: background 0.15s;
+              }
+
+              .label:hover {
+                  background: rgba(255, 255, 255, 0.05);
+              }
+
+              .label.active {
+                  background: color-mix(in srgb, var(--brand), transparent 85%);
+                  color: var(--brand);
+              }
+
+              .icon {
+                  font-size: 1.1em;
+                  opacity: 0.9;
+              }
+
+              .text {
+                  flex: 1;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+              }
+
+              .footer {
+                  padding: 12px 16px;
+                  color: var(--text-muted);
+                  font-size: 0.9em;
+                  border-top: 1px solid var(--border);
+                  background: rgba(0, 0, 0, 0.1);
+              }
+
+              .highlight {
+                  color: var(--brand);
+                  font-weight: 500;
+              }
+            `,
+      });
+    </script>
+  </body>
+</html>

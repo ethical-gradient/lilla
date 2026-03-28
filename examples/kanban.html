@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lilla · Kanban Board</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      .container {
+        max-width: 1200px;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        align-items: flex-start;
+        min-height: 60vh;
+        padding-bottom: 24px;
+      }
+
+      .column {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 350px;
+        transition: all 0.2s ease;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      .column.highlight {
+        background: color-mix(in srgb, var(--brand), transparent 92%);
+        outline: 2px dashed var(--brand);
+        outline-offset: -2px;
+        border-color: transparent;
+      }
+
+      .col-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 1.1em;
+        letter-spacing: 0.5px;
+      }
+
+      .col-count {
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-muted);
+        border-radius: 12px;
+        padding: 2px 10px;
+        font-size: 0.85em;
+      }
+
+      .list {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 100px;
+      }
+
+      .card {
+        background: var(--bg-btn);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-bottom: 12px;
+        cursor: grab;
+        color: var(--text-main);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .card:hover {
+        background: color-mix(in srgb, var(--bg-btn), var(--brand) 16%);
+        border-color: var(--brand);
+        box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2);
+      }
+
+      .card:active {
+        cursor: grabbing;
+        transform: translateY(0);
+        border-color: var(--brand);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>Kanban Board</h1>
+      </header>
+
+      <kanban-app></kanban-app>
+    </div>
+
+    <script type="module">
+      import { Lilla, createStore } from "./assets/setup.js";
+
+      const store = createStore({
+        todo: [
+          { id: 1, title: "Design System" },
+          { id: 2, title: "User Auth" },
+        ],
+        wip: [{ id: 3, title: "API Integration" }],
+        done: [
+          { id: 4, title: "Project Setup" },
+          { id: 5, title: "Database Schema" },
+        ],
+        draggedItem: null,
+        sourceCol: null,
+      });
+
+      function moveItem(itemId, fromCol, toCol) {
+        if (fromCol === toCol) return;
+
+        const sourceList = store[fromCol];
+        const itemIndex = sourceList.findIndex((i) => i.id === itemId);
+        if (itemIndex === -1) return;
+
+        const item = sourceList[itemIndex];
+        const newSourceList = [...sourceList];
+        newSourceList.splice(itemIndex, 1);
+
+        const destList = [...store[toCol], item];
+
+        store[fromCol] = newSourceList;
+        store[toCol] = destList;
+      }
+
+      // ----------------------------------------------------------------
+      // Draggable Card
+      // ----------------------------------------------------------------
+      Lilla.define("kanban-card", {
+        shadow: false,
+        props: {
+          item: Object,
+          col: String,
+        },
+
+        template({ props }, html) {
+          return html`
+            <div class="card" draggable="true" on:dragstart="start">
+              ${props.item.title}
+            </div>
+          `;
+        },
+
+        start(e) {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", this.props.item.id);
+          // Store drag state globally for access in drop handler
+          store.draggedItem = this.props.item.id;
+          store.sourceCol = this.props.col;
+        },
+      });
+
+      // ----------------------------------------------------------------
+      // Column / Drop Target
+      // ----------------------------------------------------------------
+      Lilla.define("kanban-col", {
+        shadow: false,
+        props: {
+          uid: String,
+          title: String,
+          items: Array,
+        },
+
+        state: {
+          isOver: false,
+        },
+
+        template({ props, state }, html) {
+          return html`
+            <div
+              class="column ${state.isOver ? "highlight" : ""}"
+              on:dragover="over"
+              on:dragleave="leave"
+              on:drop="drop"
+            >
+              <div class="col-header">
+                <span class="title">${props.title}</span>
+                <span class="col-count">${props.items.length}</span>
+              </div>
+
+              <div class="list">
+                ${props.items.map(
+                  (item) => html`
+                    <kanban-card item="${item}" col="${props.uid}">
+                    </kanban-card>
+                  `,
+                )}
+              </div>
+            </div>
+          `;
+        },
+
+        over(e) {
+          e.preventDefault();
+          if (!this.state.isOver) this.state.isOver = true;
+        },
+
+        leave() {
+          this.state.isOver = false;
+        },
+
+        drop(e) {
+          e.preventDefault();
+          this.state.isOver = false;
+
+          if (store.draggedItem) {
+            moveItem(store.draggedItem, store.sourceCol, this.props.uid);
+            store.draggedItem = null;
+            store.sourceCol = null;
+          }
+        },
+      });
+
+      // ----------------------------------------------------------------
+      // Main App
+      // ----------------------------------------------------------------
+      Lilla.define("kanban-app", {
+        shadow: false,
+        subscribe: [store, "todo", "wip", "done"],
+
+        template({ state }, html) {
+          return html`
+            <div class="board">
+              <kanban-col
+                uid="todo"
+                title="To Do"
+                items="${store.todo}"
+              ></kanban-col>
+              <kanban-col
+                uid="wip"
+                title="In Progress"
+                items="${store.wip}"
+              ></kanban-col>
+              <kanban-col
+                uid="done"
+                title="Done"
+                items="${store.done}"
+              ></kanban-col>
+            </div>
+          `;
+        },
+      });
+    </script>
+  </body>
+</html>

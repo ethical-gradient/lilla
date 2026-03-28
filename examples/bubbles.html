@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lilla · Bubbles Animation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #020617;
+        font-family: monospace;
+      }
+
+      .nav-back {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 100;
+        background: rgba(2, 6, 23, 0.85);
+        color: #94a3b8;
+        text-decoration: none;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        transition: all 0.2s ease;
+      }
+
+      .nav-back:hover {
+        color: #ffffff;
+        background: rgba(2, 6, 23, 1);
+      }
+    </style>
+  </head>
+
+  <body>
+    <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+
+    <bubble-world></bubble-world>
+
+    <script type="module">
+      import { Lilla } from "./assets/setup.js";
+
+      // ----------------------------------------------------------------
+      // Individual Bubble Component
+      // ----------------------------------------------------------------
+      Lilla.define("bubble-item", {
+        // Manual mode: template() runs once, updates happen via onUpdate()
+        updateStrategy: "manual",
+        props: {
+          x: 0,
+          y: 0,
+          r: 8,
+        },
+
+        onUpdate() {
+          // Direct DOM manipulation for high-frequency updates
+          const b = this.$refs.bubble;
+          b.style.transform = `translate(${this.props.x}px, ${this.props.y}px)`;
+        },
+
+        template({ props }, html) {
+          const d = props.r * 2;
+          return html`
+            <div ref="bubble" style="width:${d}px; height:${d}px;"></div>
+          `;
+        },
+
+        styles: `
+        [ref="bubble"] {
+          position: absolute;
+          border-radius: 50%;
+          background: 
+            radial-gradient(circle at 60% 60%, transparent 10%, transparent 30%, #fff),
+            radial-gradient(circle at 35% 35%, #ffffff 0%, rgba(255,255,255,0.9) 8%, transparent 18%);
+          will-change: transform;
+          pointer-events: none;
+        }
+      `,
+      });
+
+      // ----------------------------------------------------------------
+      // World Component
+      // ----------------------------------------------------------------
+      Lilla.define("bubble-world", {
+        state: () => ({
+          playing: true,
+          bubbles: Array.from({ length: 666 }, (_, i) => ({
+            id: i,
+            x: Math.random() * innerWidth,
+            y: Math.random() * innerHeight,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            r: 5 + Math.random() * 20,
+          })),
+          fps: 0,
+        }),
+
+        styles: `
+        :host {
+          background: #0c54ba url('https://frutigeraeroarchive.org/images/introduction/asadal.jpg') 0 0 no-repeat;
+          background-size: cover;
+          position: fixed;
+          inset: 0;
+          overflow: hidden;
+        }
+
+        .hud {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          z-index: 10;
+          background: rgba(2, 6, 23, 0.85);
+          padding: 10px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+          color: #94a3b8;
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+        }
+
+        .hud strong {
+          color: #fff;
+          font-size: 16px;
+        }
+      `,
+
+        template({ state }, html) {
+          return html`
+            <div class="hud">
+              FPS <strong>${state.fps}</strong><br />
+              bubbles <strong>${state.bubbles.length}</strong>
+            </div>
+
+            ${state.bubbles.map(
+              (b) => html`
+                <bubble-item
+                  key="${b.id}"
+                  x="${b.x}"
+                  y="${b.y}"
+                  r="${b.r}"
+                ></bubble-item>
+              `,
+            )}
+          `;
+        },
+
+        onMount() {
+          this._lastFrame = performance.now();
+          this.loop();
+        },
+
+        loop() {
+          if (!this.state.playing) return;
+
+          const now = performance.now();
+          const frameDt = now - this._lastFrame;
+          this._lastFrame = now;
+
+          this.state.fps = Math.round(1000 / frameDt);
+
+          const w = innerWidth;
+          const h = innerHeight;
+          const bubbles = this.state.bubbles;
+
+          for (let i = 0; i < bubbles.length; i++) {
+            const b = bubbles[i];
+
+            let x = b.x + b.vx;
+            let y = b.y + b.vy;
+
+            if (x <= 0 || x + b.r * 2 >= w) b.vx *= -1;
+            if (y <= 0 || y + b.r * 2 >= h) b.vy *= -1;
+
+            b.x += b.vx;
+            b.y += b.vy;
+          }
+
+          this.update();
+          requestAnimationFrame(() => this.loop());
+        },
+      });
+    </script>
+  </body>
+</html>

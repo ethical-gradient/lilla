@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lilla · Todo App</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      todo-app {
+        display: block;
+        min-height: 223px;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+      }
+
+      .filters {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+
+      .filter-btn {
+        background: transparent;
+        border: none;
+        height: auto;
+        padding: 4px 8px;
+        font-size: 0.9em;
+      }
+
+      .filter-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+      }
+
+      .filter-btn.active {
+        color: var(--brand);
+      }
+
+      .list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed var(--border);
+      }
+
+      .item:last-child {
+        border-bottom: none;
+      }
+
+      .item-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .item-label.done span {
+        text-decoration: line-through;
+        color: var(--text-muted);
+      }
+
+      .remove-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.25rem;
+        padding: 0 8px;
+        width: auto;
+      }
+
+      .remove-btn:hover {
+        color: color-mix(in srgb, var(--brand), red 25%);
+        background: transparent;
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--text-muted);
+        font-style: italic;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>Todo App</h1>
+      </header>
+      <div class="box" style="max-width: 480px">
+        <todo-app></todo-app>
+      </div>
+    </div>
+
+    <script type="module">
+      import { Lilla, createStore } from "./assets/setup.js";
+
+      // Global Store & API logic
+      const store = createStore({
+        todos: [
+          { id: "1", text: "Buy groceries", done: true },
+          { id: "2", text: "Walk the dog", done: false },
+        ],
+        filter: "all",
+      });
+
+      const todos = store.use("todos");
+
+      const api = {
+        add: (text) => {
+          const val = text.trim();
+          if (!val) return;
+          const newTodo = {
+            id: Date.now().toString(36),
+            text: val,
+            done: false,
+          };
+          store.todos = [newTodo, ...store.todos];
+        },
+        // Update by id: replaces item with new object
+        toggle: (id) => todos.updateById(id, (t) => ({ ...t, done: !t.done })),
+        remove: (id) => todos.removeById(id),
+        setFilter: (val) => (store.filter = val),
+
+        get visibleTodos() {
+          if (store.filter === "active")
+            return store.todos.filter((t) => !t.done);
+          if (store.filter === "done") return store.todos.filter((t) => t.done);
+          return store.todos;
+        },
+
+        filterOptions: [
+          { key: "all", label: "All" },
+          { key: "active", label: "Active" },
+          { key: "done", label: "Done" },
+        ],
+      };
+
+      // UI Component Definition
+      Lilla.define("todo-app", {
+        shadow: false,
+        subscribe: [store, "todos", "filter"],
+
+        state: () => ({
+          newText: "",
+        }),
+
+        template({ state }, html) {
+          return html`
+            <div class="input-row">
+              <input
+                type="text"
+                placeholder="What needs to be done?"
+                value="${state.newText}"
+                on:input="onInput"
+                on:keydown="onKeydown"
+              />
+              <button
+                class="primary"
+                on:click="onAdd"
+                ${state.newText.trim() ? "" : "disabled"}
+              >
+                Add
+              </button>
+            </div>
+
+            <div class="filters">
+              ${api.filterOptions.map(
+                (opt) => html`
+                  <button
+                    class="filter-btn ${store.filter === opt.key
+                      ? "active"
+                      : ""}"
+                    on:click="${() => api.setFilter(opt.key)}"
+                  >
+                    ${opt.label}
+                  </button>
+                `,
+              )}
+            </div>
+
+            <ul class="list">
+              ${api.visibleTodos.map(
+                (todo) => html`
+                  <li class="item" data-id="${todo.id}" key="${todo.id}">
+                    <label class="item-label ${todo.done ? "done" : ""}">
+                      <input
+                        type="checkbox"
+                        on:change="onToggle"
+                        ${todo.done ? "checked" : ""}
+                      />
+                      <span>${todo.text}</span>
+                    </label>
+                    <button
+                      class="remove-btn"
+                      title="Remove"
+                      on:click="onRemove"
+                    >
+                      &times;
+                    </button>
+                  </li>
+                `,
+              )}
+              ${api.visibleTodos.length === 0
+                ? html`<li class="empty">No tasks here</li>`
+                : ""}
+            </ul>
+          `;
+        },
+
+        // Event Handlers
+        onInput(e) {
+          this.state.newText = e.target.value;
+        },
+
+        onKeydown(e) {
+          if (e.key === "Enter") this.onAdd();
+        },
+
+        onAdd() {
+          api.add(this.state.newText);
+          this.state.newText = "";
+        },
+
+        onToggle() {
+          // $data.id reads data-id from closest parent element
+          api.toggle(this.$data.id);
+        },
+
+        onRemove() {
+          api.remove(this.$data.id);
+        },
+      });
+    </script>
+  </body>
+</html>

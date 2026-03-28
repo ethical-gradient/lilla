@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lilla · Memo Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <style>
+      /* Expand container to fit two cards */
+      .container {
+        max-width: 800px;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+      }
+
+      /* Component-specific UI */
+      heavy-plain,
+      heavy-memo {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 250px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .stats {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 16px;
+        border-radius: var(--radius);
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: var(--brand);
+        font-size: 0.9em;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .noise-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--bg-base);
+        border-radius: 20px;
+        font-size: 0.85em;
+        color: var(--text-muted);
+        align-self: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>Memo vs Non-Memo</h1>
+      </header>
+
+      <div class="grid-2">
+        <div class="box" style="width: 100%; margin: 0">
+          <heavy-plain></heavy-plain>
+        </div>
+
+        <div class="box" style="width: 100%; margin: 0">
+          <heavy-memo></heavy-memo>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { Lilla, memo } from "./assets/setup.js";
+
+      function fib(n) {
+        if (n <= 1) return n;
+        return fib(n - 1) + fib(n - 2);
+      }
+
+      // memo() caches result based on arguments (shallow comparison)
+      const memoFib = memo(fib);
+
+      Lilla.define("heavy-plain", {
+        shadow: false,
+        state: {
+          n: 35,
+          noise: 0,
+        },
+
+        template({ state }, html) {
+          const start = performance.now();
+          const result = fib(state.n);
+          const time = (performance.now() - start).toFixed(1);
+
+          return html`
+            <h2>Without memo</h2>
+
+            <div class="stats">
+              <div>fib(${state.n}) = ${result}</div>
+              <div style="margin-top: 8px; color: var(--text-muted);">
+                Compute time: <b>${time} ms</b>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" on:click="incN">Increase N</button>
+              <!-- Trigger re-render without changing N (tests cache hit) -->
+              <button on:click="incNoise">Trigger Render</button>
+            </div>
+
+            <div class="noise-badge">Render count: ${state.noise}</div>
+          `;
+        },
+
+        incN() {
+          this.state.n++;
+        },
+        incNoise() {
+          this.state.noise++;
+        },
+      });
+
+      Lilla.define("heavy-memo", {
+        shadow: false,
+        state: {
+          n: 35,
+          noise: 0,
+        },
+
+        template({ state }, html) {
+          const start = performance.now();
+          const result = memoFib(state.n);
+          const time = (performance.now() - start).toFixed(1);
+
+          return html`
+            <h2>With memo</h2>
+
+            <div class="stats">
+              <div>fib(${state.n}) = ${result}</div>
+              <div style="margin-top: 8px; color: var(--text-muted);">
+                Compute time: <b>${time} ms</b>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button class="primary" on:click="incN">Increase N</button>
+              <button on:click="incNoise">Trigger Render</button>
+            </div>
+
+            <div class="noise-badge">Render count: ${state.noise}</div>
+          `;
+        },
+
+        incN() {
+          this.state.n++;
+        },
+        incNoise() {
+          this.state.noise++;
+        },
+      });
+    </script>
+  </body>
+</html>
