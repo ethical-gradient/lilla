@@ -75,7 +75,9 @@ Lilla.define('task-list', {
 
 ## Examples
 
-Browse the source:
+Check out the [interactive examples](https://ethical-gradient.github.io/lilla/examples/).
+
+Or browse the source:
 
 - [Counter](examples/counter.html) — Basic state and events
 - [Todo App](examples/todo.html) — List rendering and form inputs
