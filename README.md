@@ -18,6 +18,23 @@ Lilla (Swedish for "little") is a UI library for the web. It provides a compact 
 - **Global store** — reactive state powered by Proxy.
 - **Shadow DOM by default** — optional light DOM rendering.
 
+## Installation
+
+### CDN
+
+```html
+<script type="module">
+  import { Lilla } from 'https://esm.sh/lilla'
+  // or https://unpkg.com/lilla
+</script>
+````
+
+### Npm
+
+```bash
+npm install lilla
+```
+
 ## Quick Start
 
 ```html
