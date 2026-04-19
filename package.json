@@ -40,6 +40,10 @@
     "js-framework",
     "zero-build"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethical-gradient/lilla.git"
+  },
   "author": "Ethical Gradient",
   "license": "MIT",
   "devDependencies": {
