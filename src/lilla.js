@@ -430,7 +430,7 @@ export const Lilla = {
           const value = this._api[key];
           if (typeof value !== 'function') continue;
           if (key in this) {
-            console.warn(`Key "${key}" is reserved`);
+            console.error(`Key "${key}" is reserved`);
             continue;
           }
           const bound = value.bind(this);
