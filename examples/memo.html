@@ -110,7 +110,7 @@
             </div>
 
             <div class="actions">
-              <button class="primary" on:click="incN">Increase N</button>
+              <button class="primary" on:click="incN" ${(state.n >= 38) ? 'disabled' : ''}>Increase N</button>
               <!-- Trigger re-render without changing N (tests cache hit) -->
               <button on:click="incNoise">Trigger Render</button>
             </div>
@@ -150,7 +150,7 @@
             </div>
 
             <div class="actions">
-              <button class="primary" on:click="incN">Increase N</button>
+              <button class="primary" on:click="incN" ${(state.n >= 38) ? 'disabled' : ''}>Increase N</button>
               <button on:click="incNoise">Trigger Render</button>
             </div>
 
