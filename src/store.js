@@ -53,10 +53,7 @@ export function createStore(initial = {}) {
 
       return true;
     },
-
-    ownKeys(target) {
-      return Reflect.ownKeys(target);
-    }
+    
   });
 
   return proxy;
