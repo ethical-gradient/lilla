@@ -16,9 +16,13 @@ const normalize = (cfg) => {
 
   // normalize to [[]]
   let sub = cfg.subscribe || [];
-  if (!Array.isArray(sub)) sub = [sub];
-  if (sub.length > 0 && !Array.isArray(sub[0])) {
+
+  if (!Array.isArray(sub)) {
+    sub = [[sub]];
+  } else if (typeof sub[1] === 'string') {
     sub = [sub];
+  } else {
+    sub = sub.map(i => Array.isArray(i) ? i : [i]);
   }
 
   return  {
