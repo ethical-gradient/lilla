@@ -8,7 +8,7 @@ export default defineConfig({
       name: 'spa-fallback',
       configureServer(server) {
         server.middlewares.use((req, _res, next) => {
-          if (req.url?.startsWith('/examples/router/') && !req.url.includes('.')) {
+          if (req.url?.startsWith('/examples/router') && !req.url.includes('.')) {
             req.url = '/examples/router/index.html';
           }
           next();
@@ -20,6 +20,7 @@ export default defineConfig({
     lib: {
       entry: {
         lilla: resolve(__dirname, 'src/index.js'),
+        'lilla-spa': resolve(__dirname, 'src/index-spa.js'),
       },
       formats: ['es'],
       fileName: (format, entryName) => `${entryName}.${format}.js`

@@ -8,6 +8,10 @@
     ".": {
       "import": "./dist/lilla.es.js",
       "default": "./dist/lilla.es.js"
+    },
+    "./spa": {
+      "import": "./dist/lilla-spa.es.js",
+      "default": "./dist/lilla-spa.es.js"
     }
   },
   "files": [
