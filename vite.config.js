@@ -3,6 +3,19 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  plugins: [
+    {
+      name: 'spa-fallback',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.url?.startsWith('/examples/router/') && !req.url.includes('.')) {
+            req.url = '/examples/router/index.html';
+          }
+          next();
+        });
+      }
+    }
+  ],
   build: {
     lib: {
       entry: {

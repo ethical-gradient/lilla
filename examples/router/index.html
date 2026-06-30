@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lilla · Router</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="/examples/assets/styles.css" />
+    <style>
+      .container { max-width: 860px; }
+      .shell { display: flex; gap: 24px; align-items: flex-start; }
+      .shell-main { flex: 1; min-width: 0; }
+      nav { display: flex; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+      a { color: var(--brand); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      nav a { color: var(--text-muted); }
+      nav a:hover { color: var(--text-main); text-decoration: none; }
+      nav a.active { color: var(--text-main); font-weight: 500; }
+      h2 { margin-top: 0; font-weight: 400; }
+      .back { display: block; margin-top: 2rem; color: var(--text-muted); }
+      .back:hover { color: var(--text-main); text-decoration: none; }
+      .row { display: flex; align-items: center; gap: 16px; margin: 8px 0; }
+      .row a { display: inline-block; padding: 4px 12px; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-muted); min-width: 160px; text-align: center; flex-shrink: 0; }
+      .row a:hover { color: var(--text-main); text-decoration: none; border-color: rgba(255,255,255,0.15); }
+      .debug { font-family: ui-monospace, monospace; font-size: 11px; color: var(--text-muted); white-space: pre; width: 50%; flex-shrink: 0; background: var(--bg-base); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <a href="/examples/" class="nav-back">&larr; Back to Examples</a>
+        <h1>Router</h1>
+      </header>
+
+      <div class="box">
+        <app-root></app-root>
+      </div>
+    </div>
+
+    <script type="module">
+      import { Lilla, html } from '/examples/assets/setup.js';
+      import { createRouter } from '/src/router.js';
+
+      Lilla.configure({ shadow: false });
+
+      const router = createRouter({
+        '/':         () => html`<home-view></home-view>`,
+        '/user/:id': (ctx) => html`<user-view data-id="${ctx.params.id}"></user-view>`,
+        '*':         () => html`<not-found-view></not-found-view>`,
+      }, { base: '/examples/router' });
+
+      router.beforeEach((to) => {
+        console.log('[Router]', to.route, to.params);
+      });
+
+      Lilla.define('home-view', {
+        template: (_, html) => html`
+          <div>
+            <h2>Home</h2>
+            <p>A minimal SPA router with URLPattern, history navigation, and reactive state.</p>
+            <p><a href="/examples/router/broken">→ Trigger 404</a></p>
+          </div>
+        `
+      });
+
+      Lilla.define('user-view', {
+        subscribe: router,
+        template(_, html) {
+          const id = this.dataset.id;
+          return html`
+            <div>
+              <h2>User #${id}</h2>
+
+              <div class="row">
+                <a href="/examples/router/user/${id}?sort=asc">Add ?sort=asc</a>
+                <code>${router.query.sort || '—'}</code>
+              </div>
+              <div class="row">
+                <a href="#section">Jump to #section</a>
+                <code>${router.hash || '—'}</code>
+              </div>
+              <div class="row">
+                <a on:click="sendData">Nav with data</a>
+                <code style="font-size: 11px;">${router.data ? JSON.stringify(router.data) : '—'}</code>
+              </div>
+
+              <section id="section" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <h3 style="margin-top: 0; font-weight: 400;">#section</h3>
+                <p style="color: var(--text-muted);">Anchor target — scrolled to via hash navigation.</p>
+              </section>
+
+            </div>
+          `;
+        },
+        sendData() {
+          router.push(`/user/${this.dataset.id}`, { from: 'user-view', time: new Date().toLocaleTimeString() });
+        }
+      });
+
+      Lilla.define('not-found-view', {
+        subscribe: router,
+        template: (_, html) => html`
+          <div>
+            <h2>404</h2>
+            <p>No route matched: <code>${router.path}</code></p>
+          </div>
+        `
+      });
+
+      Lilla.define('app-root', {
+        subscribe: router,
+        template(_, html) {
+          return html`
+            <div class="shell">
+              <div class="shell-main">
+                <nav>
+                  <a href="/examples/router/" class="${router.route === '/' ? 'active' : ''}">Home</a>
+                  <a href="/examples/router/user/42" class="${router.route === '/user/:id' ? 'active' : ''}">User</a>
+                </nav>
+                ${router.view}
+              </div>
+              <pre class="debug">${router}</pre>
+            </div>
+          `;
+        }
+      });
+
+    </script>
+  </body>
+</html>
