@@ -42,14 +42,40 @@
 
       Lilla.configure({ shadow: false });
 
-      const router = createRouter({
-        '/':         () => html`<home-view></home-view>`,
-        '/user/:id': (ctx) => html`<user-view data-id="${ctx.params.id}"></user-view>`,
-        '*':         () => html`<not-found-view></not-found-view>`,
-      }, { base: '/examples/router' });
+      // Basic variant:
+      // const router = createRouter({
+      //   '/':         () => html`<home-view></home-view>`,
+      //   '/user/:id': (ctx) => html`<user-view data-id="${ctx.params.id}"></user-view>`,
+      //   '*':         () => html`<not-found-view></not-found-view>`,
+      // }, { base: '/examples/router' });
+
+      // Config variant, route objects as a single source of truth (title, meta, etc):
+      const routes = [
+        {
+          route: '/',
+          view:  () => html`<home-view></home-view>`,
+          title: 'Home',
+        },
+        {
+          route: '/user/:id',
+          view:  (ctx) => html`<user-view data-id="${ctx.params.id}"></user-view>`,
+          title: 'User',
+        },
+        {
+          route: '*',
+          view:  () => html`<not-found-view></not-found-view>`,
+          title: '404',
+        },
+      ];
+
+      const router = createRouter(
+        Object.fromEntries(routes.map(r => [r.route, r.view])),
+        { base: '/examples/router' },
+      );
 
       router.beforeEach((to) => {
-        console.log('[Router]', to.route, to.params);
+        const config = routes.find(r => r.route === to.route);
+        document.title = config ? `Lilla · ${config.title}` : 'Lilla · Router';
       });
 
       Lilla.define('home-view', {
